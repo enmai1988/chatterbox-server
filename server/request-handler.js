@@ -12,7 +12,9 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 const qs = require('querystring');
-const und = require('./underscore');
+const fs = require('fs');
+const url = require('url');
+// const und = require('./underscore');
 
 var data = [];
 
@@ -44,6 +46,7 @@ var requestHandler = function(request, response) {
 
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
+  let myURL = '/classes/messages';
 
   // Tell the client we are sending them plain text.
   //
@@ -52,7 +55,7 @@ var requestHandler = function(request, response) {
   // headers['Content-Type'] = 'text/plain';
 
   if (request.method === 'GET') {
-    if (request.url === '/classes/messages') {
+    if (request.url.slice(0, myURL.length) !== myURL) {
       // response.writeHead(404, {'Content-Type': 'text/plain'});
       response.writeHead(404, headers);
       response.end();
@@ -61,16 +64,14 @@ var requestHandler = function(request, response) {
       var send = {};
       send.results = data;
       send = JSON.stringify(send);
-      // console.log('send: ', send);
       // response.writeHead(200, {'Content-Type': 'application/json'});
       response.writeHead(200, headers);
       response.end(send);
     }
   } else if (request.method === 'POST') {
-    if (request.url === '/classes/messages') {
+    if (request.url === myURL) {
       headers['Content-Type'] = 'text/plain';
       let body = '';
-      // request.setEncoding('utf8');
       request.on('data', data => {
         body += data;
         if (body.length > 1e6) {
@@ -81,10 +82,18 @@ var requestHandler = function(request, response) {
         let post = JSON.parse(body);
         post.createdAt = (new Date()).toJSON();
         data.push(post);
-        console.log(data);
+        fs.writeFile('messages.txt', JSON.stringify(data), 'utf-8', (err) => {
+          if (err) {
+            throw err;
+          }
+          console.log('The data have been saved!');
+        });
         response.writeHead(201, headers);
-        response.end('Success');
+        response.end('Received');
       });
+    } else {
+      response.writeHead(404, headers);
+      response.end('Not Found');
     }
   } else if (request.method === 'OPTIONS') {
     response.writeHead(200, headers);
