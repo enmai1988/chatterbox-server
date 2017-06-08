@@ -16,7 +16,7 @@ const fs = require('fs');
 const url = require('url');
 // const und = require('./underscore');
 
-var data = [];
+var data = {results: []};
 
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
@@ -61,12 +61,13 @@ var requestHandler = function(request, response) {
       response.end();
     } else {
       headers['Content-Type'] = 'application/json';
-      var send = {};
-      send.results = data;
-      send = JSON.stringify(send);
-      // response.writeHead(200, {'Content-Type': 'application/json'});
-      response.writeHead(200, headers);
-      response.end(send);
+      fs.readFile('messages.txt', 'utf-8', (err, data) => {
+        if (err) {
+          throw err;
+        }
+        response.writeHead(200, headers);
+        response.end(data);
+      });
     }
   } else if (request.method === 'POST') {
     if (request.url === myURL) {
@@ -81,7 +82,7 @@ var requestHandler = function(request, response) {
       request.on('end', () => {
         let post = JSON.parse(body);
         post.createdAt = (new Date()).toJSON();
-        data.push(post);
+        data.results.push(post);
         fs.writeFile('messages.txt', JSON.stringify(data), 'utf-8', (err) => {
           if (err) {
             throw err;
