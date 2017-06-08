@@ -16,6 +16,13 @@ const und = require('./underscore');
 
 var data = [];
 
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'X-Parse-Application-Id, X-Parse-REST-API-Key, Content-Type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
+
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
@@ -33,15 +40,10 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
   // The outgoing status.
-  var statusCode = 200;
+  // var statusCode = 200;
 
   // See the note below about CORS headers.
-  var headers = {
-    'access-control-allow-origin': '*',
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-headers': 'content-type, accept',
-    'access-control-max-age': 10 // Seconds.
-  };
+  var headers = defaultCorsHeaders;
 
   // Tell the client we are sending them plain text.
   //
@@ -50,20 +52,23 @@ var requestHandler = function(request, response) {
   // headers['Content-Type'] = 'text/plain';
 
   if (request.method === 'GET') {
-    if (request.url !== '/classes/messages') {
-      response.writeHead(404, {'Content-Type': 'text/plain'});
+    if (request.url === '/classes/messages') {
+      // response.writeHead(404, {'Content-Type': 'text/plain'});
+      response.writeHead(404, headers);
       response.end();
     } else {
+      headers['Content-Type'] = 'application/json';
       var send = {};
       send.results = data;
-      console.log('send: ', send);
       send = JSON.stringify(send);
       // console.log('send: ', send);
-      response.writeHead(200, {'Content-Type': 'application/json'});
+      // response.writeHead(200, {'Content-Type': 'application/json'});
+      response.writeHead(200, headers);
       response.end(send);
     }
   } else if (request.method === 'POST') {
     if (request.url === '/classes/messages') {
+      headers['Content-Type'] = 'text/plain';
       let body = '';
       // request.setEncoding('utf8');
       request.on('data', data => {
@@ -74,8 +79,10 @@ var requestHandler = function(request, response) {
       });
       request.on('end', () => {
         let post = JSON.parse(body);
+        post.createdAt = (new Date()).toJSON();
         data.push(post);
-        response.writeHead(201, {'Content-Type': 'text/plain'});
+        console.log(data);
+        response.writeHead(201, headers);
         response.end('Success');
       });
     }
