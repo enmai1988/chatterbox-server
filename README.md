@@ -2,7 +2,7 @@
 
 This is a simple chat server in `Node.js`  to handle asychronouse actions.
 
-by Eric Man 
+by Eric Mai 
 
 ## Getting started
 
